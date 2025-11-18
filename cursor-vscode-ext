@@ -17,11 +17,11 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 log_info() {
-    echo -e "${BLUE}ℹ${NC} $1"
+    echo -e "${BLUE}ℹ${NC} $1" >&2
 }
 
 log_success() {
-    echo -e "${GREEN}✓${NC} $1"
+    echo -e "${GREEN}✓${NC} $1" >&2
 }
 
 log_error() {
@@ -29,7 +29,7 @@ log_error() {
 }
 
 log_warn() {
-    echo -e "${YELLOW}⚠${NC} $1"
+    echo -e "${YELLOW}⚠${NC} $1" >&2
 }
 
 # Check if cursor command exists
@@ -149,11 +149,11 @@ install() {
 # Uninstall extension
 uninstall_extension() {
     local extension_id="$1"
-    
+
     check_cursor
-    
+
     log_info "Uninstalling ${extension_id}..."
-    
+
     if cursor --uninstall-extension "$extension_id" > /dev/null 2>&1; then
         log_success "Successfully uninstalled ${extension_id}"
         return 0
@@ -167,14 +167,14 @@ uninstall_extension() {
 # Main uninstall function
 uninstall() {
     local extension_id="$1"
-    
+
     if [[ -z "$extension_id" ]]; then
         log_error "Extension ID required"
         echo ""
         show_help
         exit 1
     fi
-    
+
     uninstall_extension "$extension_id"
 }
 
