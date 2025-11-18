@@ -135,6 +135,7 @@ _cursor-vscode-ext() {
     local -a commands
     commands=(
         'install:Install a VS Code extension to Cursor'
+        'uninstall:Uninstall a VS Code extension from Cursor'
     )
 
     _arguments \
@@ -147,8 +148,8 @@ _cursor-vscode-ext() {
             ;;
         args)
             case $words[2] in
-                install)
-                    # For install command, we could fetch available extensions
+                install|uninstall)
+                    # For install/uninstall commands, we could fetch available extensions
                     # but that would require API calls. For now, just complete
                     # common extension ID patterns
                     _message "Enter extension ID (format: publisher.extension-name)"

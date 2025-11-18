@@ -146,6 +146,38 @@ install() {
     fi
 }
 
+# Uninstall extension
+uninstall_extension() {
+    local extension_id="$1"
+    
+    check_cursor
+    
+    log_info "Uninstalling ${extension_id}..."
+    
+    if cursor --uninstall-extension "$extension_id" > /dev/null 2>&1; then
+        log_success "Successfully uninstalled ${extension_id}"
+        return 0
+    else
+        log_error "Failed to uninstall extension: ${extension_id}"
+        log_info "Make sure the extension ID is correct and the extension is installed"
+        return 1
+    fi
+}
+
+# Main uninstall function
+uninstall() {
+    local extension_id="$1"
+    
+    if [[ -z "$extension_id" ]]; then
+        log_error "Extension ID required"
+        echo ""
+        show_help
+        exit 1
+    fi
+    
+    uninstall_extension "$extension_id"
+}
+
 # Show version
 show_version() {
     echo "cursor-vscode-ext version ${VERSION}"
@@ -158,11 +190,16 @@ cursor-vscode-ext - Install VS Code extensions to Cursor
 
 USAGE:
     cursor-vscode-ext install <extension-id>
+    cursor-vscode-ext uninstall <extension-id>
     cursor-vscode-ext --version
     cursor-vscode-ext --help
 
 COMMANDS:
     install <extension-id>    Install a VS Code extension to Cursor
+                              Format: publisher.extension-name
+                              Example: vv13.markdown-auto-preview
+
+    uninstall <extension-id>  Uninstall a VS Code extension from Cursor
                               Format: publisher.extension-name
                               Example: vv13.markdown-auto-preview
 
@@ -172,7 +209,7 @@ COMMANDS:
 EXAMPLES:
     cursor-vscode-ext install vv13.markdown-auto-preview
     cursor-vscode-ext install ozaki.markdown-github-dark
-    cursor-vscode-ext install bierner.markdown-emoji
+    cursor-vscode-ext uninstall bierner.markdown-emoji
 
 For more information, visit: https://github.com/JackMBurch/cursor-vscode-ext
 EOF
@@ -189,6 +226,15 @@ main() {
                 exit 1
             fi
             install "$2"
+            ;;
+        uninstall)
+            if [[ -z "${2:-}" ]]; then
+                log_error "Extension ID required"
+                echo ""
+                show_help
+                exit 1
+            fi
+            uninstall "$2"
             ;;
         --version|-v)
             show_version

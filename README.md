@@ -104,6 +104,20 @@ cursor-vscode-ext install bierner.markdown-emoji
 cursor-vscode-ext install AykutSarac.jsoncrack-vscode
 ```
 
+### Uninstall an extension
+
+```bash
+cursor-vscode-ext uninstall <publisher.extension-name>
+```
+
+**Examples:**
+
+```bash
+cursor-vscode-ext uninstall vv13.markdown-auto-preview
+cursor-vscode-ext uninstall ozaki.markdown-github-dark
+cursor-vscode-ext uninstall bierner.markdown-emoji
+```
+
 ### Show help
 
 ```bash

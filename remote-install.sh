@@ -167,6 +167,7 @@ _cursor-vscode-ext() {
     local -a commands
     commands=(
         'install:Install a VS Code extension to Cursor'
+        'uninstall:Uninstall a VS Code extension from Cursor'
     )
 
     _arguments \
@@ -179,7 +180,7 @@ _cursor-vscode-ext() {
             ;;
         args)
             case $words[2] in
-                install)
+                install|uninstall)
                     _message "Enter extension ID (format: publisher.extension-name)"
                     ;;
             esac

@@ -84,26 +84,26 @@ get_zsh_completions_dir() {
 # Find script location
 find_script_location() {
     local script_path
-    
+
     # Check common installation locations
     if command -v "$SCRIPT_NAME" &> /dev/null; then
         script_path=$(command -v "$SCRIPT_NAME")
         echo "$(dirname "$script_path")"
         return 0
     fi
-    
+
     # Check ~/.local/bin (remote install default)
     if [[ -f "${HOME}/.local/bin/${SCRIPT_NAME}" ]]; then
         echo "${HOME}/.local/bin"
         return 0
     fi
-    
+
     # Check if we're in the repo directory
     if [[ -f "${PWD}/${SCRIPT_NAME}" ]]; then
         echo "$PWD"
         return 0
     fi
-    
+
     return 1
 }
 
@@ -111,12 +111,12 @@ find_script_location() {
 remove_script() {
     local install_dir="$1"
     local script_file="${install_dir}/${SCRIPT_NAME}"
-    
+
     if [[ -f "$script_file" ]]; then
         log_info "Removing script: ${script_file}"
         rm -f "$script_file"
         log_success "Removed script file"
-        
+
         # Remove directory if empty (and it's ~/.local/bin)
         if [[ "$install_dir" == "${HOME}/.local/bin" ]] && [[ -d "$install_dir" ]]; then
             if [[ -z "$(ls -A "$install_dir" 2>/dev/null)" ]]; then
@@ -135,13 +135,13 @@ remove_script() {
 remove_path_entries() {
     local shell_type="$1"
     local config_file=$(get_shell_config "$shell_type")
-    
+
     if [[ ! -f "$config_file" ]]; then
         return 0
     fi
-    
+
     log_info "Removing PATH entries from ${config_file}..."
-    
+
     # Remove lines containing "# cursor-vscode-ext PATH" and the export line
     if grep -q "# cursor-vscode-ext PATH" "$config_file" 2>/dev/null; then
         # Use sed to remove the block (comment line + export line + blank line before if exists)
@@ -152,12 +152,12 @@ remove_path_entries() {
             # Linux sed
             sed -i '/^# cursor-vscode-ext PATH$/,/^export PATH=.*cursor-vscode-ext/d' "$config_file"
         fi
-        
+
         # Remove trailing blank line if it exists
         if [[ -f "$config_file" ]]; then
             sed -i '$ { /^$/d; }' "$config_file" 2>/dev/null || true
         fi
-        
+
         log_success "Removed PATH entries from ${config_file}"
         return 0
     else
@@ -170,12 +170,12 @@ remove_path_entries() {
 remove_zsh_completion() {
     local completions_dir=$(get_zsh_completions_dir)
     local completion_file="${completions_dir}/_cursor-vscode-ext"
-    
+
     if [[ -f "$completion_file" ]]; then
         log_info "Removing zsh completion file: ${completion_file}"
         rm -f "$completion_file"
         log_success "Removed completion file"
-        
+
         # Remove directory if empty
         if [[ -d "$completions_dir" ]] && [[ -z "$(ls -A "$completions_dir" 2>/dev/null)" ]]; then
             log_info "Removing empty completions directory: ${completions_dir}"
@@ -191,13 +191,13 @@ remove_zsh_completion() {
 # Remove fpath configuration from zshrc
 remove_fpath_config() {
     local zsh_config=$(get_shell_config "zsh")
-    
+
     if [[ ! -f "$zsh_config" ]]; then
         return 0
     fi
-    
+
     log_info "Removing fpath configuration from ${zsh_config}..."
-    
+
     # Remove lines containing "fpath.*cursor-vscode-ext" and related compinit lines
     if grep -q "fpath.*cursor-vscode-ext" "$zsh_config" 2>/dev/null; then
         # Remove the fpath block (comment + fpath line + autoload/compinit lines if they're together)
@@ -208,12 +208,12 @@ remove_fpath_config() {
             # Linux sed
             sed -i '/^# cursor-vscode-ext zsh completions$/,/^compinit$/d' "$zsh_config"
         fi
-        
+
         # Remove trailing blank line if it exists
         if [[ -f "$zsh_config" ]]; then
             sed -i '$ { /^$/d; }' "$zsh_config" 2>/dev/null || true
         fi
-        
+
         log_success "Removed fpath configuration from ${zsh_config}"
         return 0
     else
@@ -226,7 +226,7 @@ remove_fpath_config() {
 main() {
     echo "Uninstalling cursor-vscode-ext..."
     echo ""
-    
+
     # Find script location
     local install_dir
     if install_dir=$(find_script_location); then
@@ -236,30 +236,30 @@ main() {
         log_info "Attempting to remove configuration files anyway..."
         install_dir=""
     fi
-    
+
     # Remove script file
     if [[ -n "$install_dir" ]]; then
         remove_script "$install_dir"
     fi
-    
+
     # Detect shell
     local shell_type=$(detect_shell)
     log_info "Detected shell: ${shell_type}"
-    
+
     # Remove PATH entries from current shell config
     remove_path_entries "$shell_type"
-    
+
     # Also remove from zshrc if different from current shell
     if command -v zsh &> /dev/null && [[ "$shell_type" != "zsh" ]]; then
         remove_path_entries "zsh"
     fi
-    
+
     # Remove zsh completion
     if command -v zsh &> /dev/null; then
         remove_zsh_completion
         remove_fpath_config
     fi
-    
+
     echo ""
     log_success "Uninstallation complete!"
     echo ""
