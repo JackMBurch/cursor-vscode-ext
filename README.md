@@ -57,6 +57,36 @@ If you prefer to install manually:
    source ~/.zshrc  # or ~/.bashrc
    ```
 
+## Uninstallation
+
+To uninstall cursor-vscode-ext:
+
+1. Run the uninstall script:
+
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/JackMBurch/cursor-vscode-ext/main/uninstall.sh | bash
+   ```
+
+   Or if you have the repository cloned locally:
+
+   ```bash
+   cd ~/repos/cursor-vscode-ext
+   ./uninstall.sh
+   ```
+
+2. Reload your shell:
+
+   ```bash
+   source ~/.zshrc  # or ~/.bashrc
+   ```
+
+The uninstall script will:
+
+- Remove the `cursor-vscode-ext` script file
+- Remove PATH entries from your shell configuration files
+- Remove zsh autocomplete files and configuration
+- Clean up empty directories
+
 ## Usage
 
 ### Install an extension
