@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# cursor-vscode-ext - Install VS Code extensions to Cursor
+# Usage: cursor-vscode-ext install <publisher.extension-name>
+
+VERSION="1.0.0"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMP_DIR="${TMPDIR:-/tmp}"
+MARKETPLACE_BASE_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+log_info() {
+    echo -e "${BLUE}ℹ${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}✓${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}✗${NC} $1" >&2
+}
+
+log_warn() {
+    echo -e "${YELLOW}⚠${NC} $1"
+}
+
+# Check if cursor command exists
+check_cursor() {
+    if ! command -v cursor &> /dev/null; then
+        log_error "Cursor command not found. Please ensure Cursor is installed and in your PATH."
+        exit 1
+    fi
+}
+
+# Parse extension ID (publisher.extension-name)
+parse_extension_id() {
+    local extension_id="$1"
+
+    if [[ ! "$extension_id" =~ ^[^.]+\.[^.]+$ ]]; then
+        log_error "Invalid extension ID format. Expected: publisher.extension-name"
+        log_error "Example: vv13.markdown-auto-preview"
+        exit 1
+    fi
+
+    IFS='.' read -r publisher extension_name <<< "$extension_id"
+    echo "$publisher|$extension_name"
+}
+
+# Download VSIX file
+download_vsix() {
+    local publisher="$1"
+    local extension_name="$2"
+    local output_file="$3"
+
+    local url="${MARKETPLACE_BASE_URL}/${publisher}/vsextensions/${extension_name}/latest/vspackage"
+
+    log_info "Downloading ${publisher}.${extension_name}..."
+
+    if ! curl -fsSL -H "Accept: application/zip" -o "$output_file" "$url"; then
+        log_error "Failed to download extension from marketplace"
+        exit 1
+    fi
+
+    if [[ ! -f "$output_file" ]] || [[ ! -s "$output_file" ]]; then
+        log_error "Downloaded file is empty or missing"
+        exit 1
+    fi
+}
+
+# Decompress gzipped VSIX if needed
+decompress_if_needed() {
+    local input_file="$1"
+    local output_file="$2"
+
+    if file "$input_file" | grep -q "gzip"; then
+        log_info "Decompressing VSIX file..."
+        if ! gunzip -c "$input_file" > "$output_file"; then
+            log_error "Failed to decompress VSIX file"
+            exit 1
+        fi
+        echo "$output_file"
+    else
+        echo "$input_file"
+    fi
+}
+
+# Install extension
+install_extension() {
+    local vsix_file="$1"
+    local extension_id="$2"
+
+    log_info "Installing extension..."
+
+    if cursor --install-extension "$vsix_file" > /dev/null 2>&1; then
+        log_success "Successfully installed ${extension_id}"
+        return 0
+    else
+        log_error "Failed to install extension"
+        return 1
+    fi
+}
+
+# Main install function
+install() {
+    local extension_id="$1"
+
+    check_cursor
+
+    local parsed=$(parse_extension_id "$extension_id")
+    IFS='|' read -r publisher extension_name <<< "$parsed"
+
+    local temp_vsix="${TMP_DIR}/cursor-ext-${publisher}-${extension_name}-$$.vsix"
+    local final_vsix="${temp_vsix}"
+
+    # Cleanup function
+    cleanup() {
+        rm -f "$temp_vsix" "${temp_vsix%.vsix}-uncompressed.vsix"
+    }
+    trap cleanup EXIT
+
+    download_vsix "$publisher" "$extension_name" "$temp_vsix"
+
+    # Check if decompression is needed
+    local file_type=$(file "$temp_vsix" 2>/dev/null || echo "")
+    if echo "$file_type" | grep -q "gzip"; then
+        local uncompressed="${temp_vsix%.vsix}-uncompressed.vsix"
+        final_vsix=$(decompress_if_needed "$temp_vsix" "$uncompressed")
+    fi
+
+    if install_extension "$final_vsix" "$extension_id"; then
+        cleanup
+        trap - EXIT
+        return 0
+    else
+        cleanup
+        trap - EXIT
+        return 1
+    fi
+}
+
+# Show version
+show_version() {
+    echo "cursor-vscode-ext version ${VERSION}"
+}
+
+# Show help
+show_help() {
+    cat << EOF
+cursor-vscode-ext - Install VS Code extensions to Cursor
+
+USAGE:
+    cursor-vscode-ext install <extension-id>
+    cursor-vscode-ext --version
+    cursor-vscode-ext --help
+
+COMMANDS:
+    install <extension-id>    Install a VS Code extension to Cursor
+                              Format: publisher.extension-name
+                              Example: vv13.markdown-auto-preview
+
+    --version                 Show version information
+    --help                    Show this help message
+
+EXAMPLES:
+    cursor-vscode-ext install vv13.markdown-auto-preview
+    cursor-vscode-ext install ozaki.markdown-github-dark
+    cursor-vscode-ext install bierner.markdown-emoji
+
+For more information, visit: https://github.com/yourusername/cursor-vscode-ext
+EOF
+}
+
+# Main command handler
+main() {
+    case "${1:-}" in
+        install)
+            if [[ -z "${2:-}" ]]; then
+                log_error "Extension ID required"
+                echo ""
+                show_help
+                exit 1
+            fi
+            install "$2"
+            ;;
+        --version|-v)
+            show_version
+            ;;
+        --help|-h|"")
+            show_help
+            ;;
+        *)
+            log_error "Unknown command: $1"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"
+
