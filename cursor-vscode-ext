@@ -108,12 +108,38 @@ install_extension() {
     fi
 }
 
+# Install extension directly from Cursor marketplace
+install_from_cursor_marketplace() {
+    local extension_id="$1"
+    
+    check_cursor
+    
+    log_info "Installing ${extension_id} from Cursor marketplace..."
+    
+    if cursor --install-extension "$extension_id" > /dev/null 2>&1; then
+        log_success "Successfully installed ${extension_id} from Cursor marketplace"
+        return 0
+    else
+        log_error "Failed to install extension from Cursor marketplace: ${extension_id}"
+        log_info "Make sure the extension ID is correct and available in the Cursor marketplace"
+        return 1
+    fi
+}
+
 # Main install function
 install() {
     local extension_id="$1"
+    local use_cursor_marketplace="${2:-false}"
 
     check_cursor
 
+    # If --cursor flag is set, use Cursor marketplace directly
+    if [[ "$use_cursor_marketplace" == "true" ]]; then
+        install_from_cursor_marketplace "$extension_id"
+        return $?
+    fi
+
+    # Otherwise, use VS Code marketplace
     local parsed=$(parse_extension_id "$extension_id")
     IFS='|' read -r publisher extension_name <<< "$parsed"
 
@@ -189,15 +215,19 @@ show_help() {
 cursor-vscode-ext - Install VS Code extensions to Cursor
 
 USAGE:
-    cursor-vscode-ext install <extension-id>
+    cursor-vscode-ext install [--cursor] <extension-id>
     cursor-vscode-ext uninstall <extension-id>
     cursor-vscode-ext --version
     cursor-vscode-ext --help
 
 COMMANDS:
-    install <extension-id>    Install a VS Code extension to Cursor
+    install [--cursor] <extension-id>
+                              Install an extension to Cursor
                               Format: publisher.extension-name
                               Example: vv13.markdown-auto-preview
+                              
+                              Use --cursor flag to install from Cursor marketplace
+                              instead of VS Code marketplace
 
     uninstall <extension-id>  Uninstall a VS Code extension from Cursor
                               Format: publisher.extension-name
@@ -208,6 +238,7 @@ COMMANDS:
 
 EXAMPLES:
     cursor-vscode-ext install vv13.markdown-auto-preview
+    cursor-vscode-ext install --cursor some.cursor-extension
     cursor-vscode-ext install ozaki.markdown-github-dark
     cursor-vscode-ext uninstall bierner.markdown-emoji
 
@@ -219,13 +250,39 @@ EOF
 main() {
     case "${1:-}" in
         install)
-            if [[ -z "${2:-}" ]]; then
+            local use_cursor_marketplace="false"
+            local extension_id=""
+            
+            # Parse arguments - handle --cursor flag
+            shift
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --cursor)
+                        use_cursor_marketplace="true"
+                        shift
+                        ;;
+                    *)
+                        if [[ -z "$extension_id" ]]; then
+                            extension_id="$1"
+                        else
+                            log_error "Unexpected argument: $1"
+                            echo ""
+                            show_help
+                            exit 1
+                        fi
+                        shift
+                        ;;
+                esac
+            done
+            
+            if [[ -z "$extension_id" ]]; then
                 log_error "Extension ID required"
                 echo ""
                 show_help
                 exit 1
             fi
-            install "$2"
+            
+            install "$extension_id" "$use_cursor_marketplace"
             ;;
         uninstall)
             if [[ -z "${2:-}" ]]; then

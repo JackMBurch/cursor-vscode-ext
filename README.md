@@ -91,17 +91,29 @@ The uninstall script will:
 
 ### Install an extension
 
+Install from VS Code marketplace (default):
+
 ```bash
 cursor-vscode-ext install <publisher.extension-name>
+```
+
+Install from Cursor marketplace:
+
+```bash
+cursor-vscode-ext install --cursor <publisher.extension-name>
 ```
 
 **Examples:**
 
 ```bash
+# Install from VS Code marketplace
 cursor-vscode-ext install vv13.markdown-auto-preview
 cursor-vscode-ext install ozaki.markdown-github-dark
 cursor-vscode-ext install bierner.markdown-emoji
 cursor-vscode-ext install AykutSarac.jsoncrack-vscode
+
+# Install from Cursor marketplace
+cursor-vscode-ext install --cursor some.cursor-extension
 ```
 
 ### Uninstall an extension
