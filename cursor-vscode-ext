@@ -174,7 +174,7 @@ EXAMPLES:
     cursor-vscode-ext install ozaki.markdown-github-dark
     cursor-vscode-ext install bierner.markdown-emoji
 
-For more information, visit: https://github.com/yourusername/cursor-vscode-ext
+For more information, visit: https://github.com/JackMBurch/cursor-vscode-ext
 EOF
 }
 

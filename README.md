@@ -15,9 +15,8 @@ A pure bash script to install VS Code extensions directly to Cursor IDE.
 1. Clone or download this repository:
 ```bash
 cd ~/repos
-git clone <your-repo-url> cursor-vscode-ext
-# Or if you already have it:
-cd ~/repos/cursor-vscode-ext
+git clone https://github.com/JackMBurch/cursor-vscode-ext.git
+cd cursor-vscode-ext
 ```
 
 2. Run the install script:
